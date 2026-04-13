@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>三隻小豬任務城堡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink: #F4A0B5;
+  --pink-light: #FFF0F4;
+  --pink-dark: #D4537E;
+  --peach: #FDDCB5;
+  --peach-light: #FFF5EB;
+  --peach-dark: #E8935A;
+  --mint: #B5E8D5;
+  --mint-light: #EDFAF4;
+  --mint-dark: #3DA87A;
+  --gold: #F5C842;
+  --gold-light: #FFF8E0;
+  --gold-dark: #C99A0E;
+  --sky: #A8D8F0;
+  --sky-light: #EBF5FC;
+  --sky-dark: #3B8BD4;
+  --brown: #8B6F5C;
+  --brown-light: #F5EDE8;
+  --brown-dark: #5C4333;
+  --white: #FFFDF9;
+  --gray-50: #FAF8F5;
+  --gray-100: #F0ECE6;
+  --gray-200: #DED8CF;
+  --gray-400: #A09889;
+  --gray-600: #6E655A;
+  --gray-800: #3D3630;
+  --danger: #E24B4A;
+  --danger-light: #FCEBEB;
+  --success: #3DA87A;
+  --success-light: #EDFAF4;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(92,67,51,0.06);
+  --shadow-md: 0 4px 20px rgba(92,67,51,0.1);
+  --shadow-lg: 0 8px 40px rgba(92,67,51,0.14);
+  --font-display: 'Fredoka', 'Noto Sans TC', sans-serif;
+  --font-body: 'Noto Sans TC', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---- Loading Overlay ---- */
+#loading-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, var(--peach-light) 0%, var(--pink-light) 50%, var(--mint-light) 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity .4s, visibility .4s;
+}
+#loading-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading-pig { font-size: 48px; animation: bounce 1s ease-in-out infinite; }
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+.loading-text { margin-top: 16px; font-family: var(--font-display); font-size: 18px; color: var(--brown); }
+
+/* ---- Login Page ---- */
+#login-page {
+  min-height: 100dvh;
+  background: linear-gradient(160deg, var(--peach-light) 0%, var(--pink-light) 40%, var(--mint-light) 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 32px 36px;
+  width: 100%; max-width: 380px;
+  text-align: center;
+}
+.login-piggy {
+  font-size: 72px;
+  margin-bottom: 8px;
+  animation: wiggle 2s ease-in-out infinite;
+}
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+.login-title {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700;
+  color: var(--brown-dark);
+  margin-bottom: 2px;
+}
+.login-subtitle {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 500;
+  color: var(--gray-400);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.form-group { text-align: left; margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 13px; font-weight: 500;
+  color: var(--gray-600); margin-bottom: 6px;
+}
+.form-input {
+  width: 100%; padding: 12px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 16px; font-family: var(--font-body);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(244,160,181,0.2);
+}
+.form-input::placeholder { color: var(--gray-400); }
+.form-select {
+  width: 100%; padding: 12px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 16px; font-family: var(--font-body);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  outline: none; cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A09889' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.btn-login {
+  width: 100%; padding: 14px;
+  margin-top: 8px;
+  border: none; border-radius: var(--radius-lg);
+  font-size: 18px; font-weight: 600;
+  font-family: var(--font-display);
+  color: white; cursor: pointer;
+  background: linear-gradient(135deg, var(--pink) 0%, var(--peach-dark) 100%);
+  box-shadow: 0 4px 16px rgba(212,83,126,0.25);
+  transition: transform .15s, box-shadow .15s;
+  letter-spacing: 4px;
+}
+.btn-login:active { transform: scale(0.97); }
+.login-error {
+  margin-top: 12px; padding: 10px;
+  background: var(--danger-light);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  display: none;
+}
+
+/* ---- App Shell ---- */
+#app-page { display: none; min-height: 100dvh; padding-bottom: 80px; }
+.app-bg {
+  position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, var(--peach-light) 0%, var(--gray-50) 30%);
+}
+
+/* ---- Top Bar ---- */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,253,249,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(222,216,207,0.5);
+}
+.user-info { display: flex; align-items: center; gap: 10px; }
+.user-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  background: var(--pink-light);
+  border: 2px solid var(--pink);
+}
+.user-name { font-weight: 700; font-size: 16px; color: var(--brown-dark); }
+.user-coins {
+  font-family: var(--font-display);
+  font-size: 14px; font-weight: 600; color: var(--gold-dark);
+}
+.btn-logout {
+  padding: 6px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font-size: 13px; color: var(--gray-600);
+  cursor: pointer; font-family: var(--font-body);
+}
+
+/* ---- Announcement Banner ---- */
+.announcement-banner {
+  margin: 12px 16px 0;
+  padding: 14px 18px;
+  background: var(--gold-light);
+  border: 1.5px solid var(--gold);
+  border-radius: var(--radius-md);
+}
+.announce-flag { font-size: 12px; font-weight: 700; color: var(--gold-dark); margin-bottom: 4px; }
+.announce-title { font-weight: 700; font-size: 15px; color: var(--brown-dark); }
+.announce-content { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+
+/* ---- Tab Navigation ---- */
+.tab-nav {
+  display: flex;
+  margin: 16px 16px 0;
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-btn {
+  flex: 1; min-width: 0;
+  padding: 10px 6px;
+  border: none; background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  background: var(--white);
+  color: var(--brown-dark);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Tab Content ---- */
+.tab-content { display: none; padding: 16px; }
+.tab-content.active { display: block; }
+
+/* ---- Section Header ---- */
+.section-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; margin-top: 8px;
+}
+.section-bar { width: 4px; height: 20px; border-radius: 2px; background: var(--pink); }
+.section-title { font-weight: 700; font-size: 17px; color: var(--brown-dark); }
+
+/* ---- Task Card ---- */
+.task-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid transparent;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: pointer;
+}
+.task-card.selected {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(244,160,181,0.15);
+}
+.task-checkbox {
+  width: 24px; height: 24px; flex-shrink: 0;
+  border: 2px solid var(--gray-200);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.task-card.selected .task-checkbox {
+  background: var(--pink);
+  border-color: var(--pink);
+}
+.task-card.selected .task-checkbox::after {
+  content: '✓'; color: white; font-size: 14px; font-weight: 700;
+}
+.task-name { flex: 1; font-size: 15px; font-weight: 500; }
+.task-coins {
+  font-family: var(--font-display);
+  font-size: 14px; font-weight: 600; color: var(--gold-dark);
+  white-space: nowrap;
+}
+
+/* ---- Reward Card ---- */
+.reward-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.reward-info { flex: 1; }
+.reward-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.reward-cost {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 500; color: var(--gold-dark);
+}
+.btn-claim {
+  padding: 8px 20px;
+  border: none; border-radius: var(--radius-sm);
+  background: var(--sky);
+  color: var(--sky-dark);
+  font-weight: 600; font-size: 14px;
+  cursor: pointer; font-family: var(--font-body);
+  transition: transform .1s;
+}
+.btn-claim:active { transform: scale(0.95); }
+.btn-claim:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- History Item ---- */
+.history-item {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+.history-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.history-name { font-weight: 600; font-size: 15px; }
+.history-status {
+  font-size: 13px; font-weight: 600;
+  padding: 2px 10px; border-radius: 20px;
+}
+.status-approved { background: var(--success-light); color: var(--success); }
+.status-rejected { background: var(--danger-light); color: var(--danger); }
+.status-pending { background: var(--gold-light); color: var(--gold-dark); }
+.history-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 6px;
+}
+.history-time { font-size: 12px; color: var(--gray-400); }
+.history-coins { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--gold-dark); }
+.history-note { font-size: 12px; color: var(--gray-600); margin-top: 4px; }
+.history-who { font-size: 12px; color: var(--pink-dark); font-weight: 500; }
+
+/* ---- Primary Action Button (floating) ---- */
+.fab-container {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 90;
+}
+.btn-primary-action {
+  padding: 14px 40px;
+  border: none; border-radius: var(--radius-xl);
+  font-size: 17px; font-weight: 600;
+  font-family: var(--font-display);
+  color: white; cursor: pointer;
+  background: linear-gradient(135deg, var(--pink) 0%, var(--peach-dark) 100%);
+  box-shadow: 0 6px 24px rgba(212,83,126,0.3);
+  transition: transform .15s, box-shadow .15s;
+  letter-spacing: 2px;
+}
+.btn-primary-action:active { transform: scale(0.95); }
+.btn-primary-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Custom Task Form ---- */
+.custom-form {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px dashed var(--gray-200);
+}
+.custom-form-title { font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+.form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.form-row .form-input { flex: 1; }
+.form-row .form-input.short { max-width: 100px; }
+.btn-submit-custom {
+  padding: 10px 24px;
+  border: none; border-radius: var(--radius-sm);
+  background: var(--mint);
+  color: var(--mint-dark);
+  font-weight: 600; font-size: 14px;
+  cursor: pointer; font-family: var(--font-body);
+}
+
+/* ---- Admin: Pending Review Card ---- */
+.review-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.review-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; background: var(--pink-light);
+}
+.review-who { font-weight: 600; font-size: 14px; }
+.review-body { display: flex; justify-content: space-between; align-items: center; }
+.review-task { font-size: 15px; font-weight: 500; }
+.review-note { font-size: 12px; color: var(--gray-600); margin-top: 4px; }
+.review-coins { font-family: var(--font-display); font-weight: 600; color: var(--gold-dark); }
+.review-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-approve {
+  flex: 1; padding: 10px;
+  border: none; border-radius: var(--radius-sm);
+  background: var(--success-light); color: var(--success);
+  font-weight: 600; font-size: 14px; cursor: pointer;
+  font-family: var(--font-body);
+}
+.btn-reject {
+  flex: 1; padding: 10px;
+  border: none; border-radius: var(--radius-sm);
+  background: var(--danger-light); color: var(--danger);
+  font-weight: 600; font-size: 14px; cursor: pointer;
+  font-family: var(--font-body);
+}
+.review-time { font-size: 11px; color: var(--gray-400); margin-top: 6px; }
+
+/* ---- Admin: Management Cards ---- */
+.mgmt-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mgmt-info { flex: 1; }
+.mgmt-name { font-weight: 600; font-size: 15px; }
+.mgmt-sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+.mgmt-actions { display: flex; gap: 6px; }
+.btn-edit {
+  padding: 6px 14px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+  background: var(--white); color: var(--gray-600);
+  font-size: 13px; cursor: pointer; font-family: var(--font-body);
+}
+.btn-delete {
+  padding: 6px 14px;
+  border: 1.5px solid var(--danger-light); border-radius: var(--radius-sm);
+  background: var(--danger-light); color: var(--danger);
+  font-size: 13px; cursor: pointer; font-family: var(--font-body);
+}
+
+/* ---- Admin: Coin Adjustment ---- */
+.coin-mgmt-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--gold);
+}
+.coin-mgmt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.coin-member-name { font-weight: 700; font-size: 16px; }
+.coin-current { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--gold-dark); }
+.coin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.coin-input {
+  width: 90px; padding: 8px 12px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-size: 15px; text-align: center;
+  font-family: var(--font-display);
+}
+.btn-coin {
+  padding: 8px 16px;
+  border: none; border-radius: var(--radius-sm);
+  font-weight: 600; font-size: 13px;
+  cursor: pointer; font-family: var(--font-body);
+}
+.btn-coin-set { background: var(--peach); color: var(--brown-dark); }
+.btn-coin-add { background: var(--mint); color: var(--mint-dark); }
+.btn-coin-sub { background: var(--danger-light); color: var(--danger); }
+
+/* ---- Add Form (inline) ---- */
+.add-form {
+  background: var(--white);
+  border: 1.5px dashed var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.add-form-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; color: var(--brown-dark); }
+
+/* ---- Modal ---- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.35);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; visibility: hidden;
+  transition: opacity .25s, visibility .25s;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-box {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  width: 100%; max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+.modal-icon { font-size: 48px; margin-bottom: 12px; }
+.modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--brown-dark); }
+.modal-msg { font-size: 14px; color: var(--gray-600); margin-bottom: 20px; line-height: 1.6; }
+.modal-btn {
+  padding: 12px 32px;
+  border: none; border-radius: var(--radius-md);
+  font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: var(--font-display);
+  background: var(--pink); color: white;
+  letter-spacing: 2px;
+}
+
+/* ---- Badge / Pill ---- */
+.badge {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.badge-admin { background: var(--pink-light); color: var(--pink-dark); }
+.badge-member { background: var(--sky-light); color: var(--sky-dark); }
+
+/* ---- Empty State ---- */
+.empty-state {
+  text-align: center; padding: 40px 20px;
+  color: var(--gray-400);
+}
+.empty-icon { font-size: 40px; margin-bottom: 8px; }
+.empty-text { font-size: 14px; }
+
+/* ---- Toast ---- */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+  z-index: 9000;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500;
+  box-shadow: var(--shadow-md);
+  transition: transform .3s;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-success { background: var(--success-light); color: var(--success); border: 1px solid var(--success); }
+.toast-error { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); }
+
+/* ---- Pending Badge on Tab ---- */
+.pending-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px;
+  background: var(--danger); color: white;
+  font-size: 11px; font-weight: 700;
+  margin-left: 4px;
+}
+
+/* ---- Utilities ---- */
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.text-center { text-align: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <div class="loading-pig">🐷</div>
+  <div class="loading-text">正在搬磚蓋房子...</div>
+</div>
+
+<!-- Login Page -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-piggy">🐷</div>
+    <div class="login-title">三隻小豬</div>
+    <div class="login-subtitle">Task Castle</div>
+
+    <div class="form-group">
+      <label class="form-label">身份選擇</label>
+      <select id="login-username" class="form-select">
+        <option value="">請選擇你是誰...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">通關密語</label>
+      <input type="password" id="login-password" class="form-input" placeholder="請輸入密碼">
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">進 入 城 堡</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+
+<!-- App Page -->
+<div id="app-page">
+  <div class="app-bg"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="user-info">
+      <div class="user-avatar" id="app-avatar">🐷</div>
+      <div>
+        <div class="user-name" id="app-nickname">-</div>
+        <div class="user-coins" id="app-coins">0 金幣</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">登出</button>
+  </div>
+
+  <!-- Announcements -->
+  <div id="announcements-area"></div>
+
+  <!-- Tab Nav (dynamic) -->
+  <div class="tab-nav" id="tab-nav"></div>
+
+  <!-- Tab Contents (dynamic) -->
+  <div id="tab-contents"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon" id="modal-icon">🎉</div>
+    <div class="modal-title" id="modal-title">成功</div>
+    <div class="modal-msg" id="modal-msg">操作完成！</div>
+    <button class="modal-btn" onclick="closeModal()">好 的</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Floating Action Button -->
+<div class="fab-container" id="fab-container" style="display:none;">
+  <button class="btn-primary-action" id="fab-btn" onclick="onFabClick()">送出申報</button>
+</div>
+
+<script>
+// ============ CONFIG ============
+const API_URL = 'https://script.google.com/macros/s/AKfycby7aoUkIH7BVbZZYeneHzwEj6AXa_2k4IhwXu0qAKr5fvW6md3z5YVBkH1z9s7Sy8bGMQ/exec';
+
+// ============ STATE ============
+let currentUser = null;
+let selectedTasks = new Set();
+let tasksData = [];
+let rewardsData = [];
+let currentTab = '';
+
+const AVATARS = ['🐷','🐷','🐽','🐖','🐗','🐶','🐱'];
+
+// ============ API HELPER ============
+async function api(action, data = {}) {
+  const payload = { action, ...data };
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch(err) {
+    console.error('API Error:', err);
+    return { success: false, error: '網路連線失敗，請稍後再試' };
+  }
+}
+
+// ============ INIT ============
+window.addEventListener('DOMContentLoaded', async () => {
+  // Try to restore session
+  const saved = localStorage.getItem('pigUser');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      await refreshUserInfo();
+      showApp();
+    } catch(e) {
+      localStorage.removeItem('pigUser');
+    }
+  }
+  // Load user list for login dropdown
+  await loadUserList();
+  hideLoading();
+});
+
+async function loadUserList() {
+  const res = await api('getAllMembers', { userId: 'public' });
+  const select = document.getElementById('login-username');
+  // We can't get all members without admin, so we'll just let user type
+  // Actually, let's change login to username input
+  // For better UX, keep it as input
+  select.outerHTML = '<input type="text" id="login-username" class="form-input" placeholder="輸入你的帳號">';
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+// ============ LOGIN ============
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  const errEl = document.getElementById('login-error');
+
+  if (!username || !password) {
+    errEl.textContent = '請輸入帳號和通關密語！';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  const btn = document.querySelector('.btn-login');
+  btn.textContent = '正在開門...';
+  btn.disabled = true;
+
+  const res = await api('login', { username, password });
+
+  if (res.success) {
+    currentUser = res.user;
+    localStorage.setItem('pigUser', JSON.stringify(currentUser));
+    showApp();
+  } else {
+    errEl.textContent = res.error || '登入失敗';
+    errEl.style.display = 'block';
+  }
+
+  btn.textContent = '進 入 城 堡';
+  btn.disabled = false;
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('pigUser');
+  document.getElementById('app-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+  document.getElementById('fab-container').style.display = 'none';
+}
+
+// ============ SHOW APP ============
+async function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app-page').style.display = 'block';
+  updateUserDisplay();
+
+  if (currentUser.role === 'admin') {
+    buildAdminTabs();
+  } else {
+    buildMemberTabs();
+  }
+}
+
+function updateUserDisplay() {
+  document.getElementById('app-avatar').textContent = AVATARS[currentUser.avatar] || '🐷';
+  document.getElementById('app-nickname').textContent = currentUser.nickname;
+  document.getElementById('app-coins').textContent = currentUser.coins + ' 金幣';
+}
+
+async function refreshUserInfo() {
+  const res = await api('getUserInfo', { userId: currentUser.id });
+  if (res.success) {
+    currentUser.coins = res.user.coins;
+    currentUser.nickname = res.user.nickname;
+    currentUser.avatar = res.user.avatar;
+    localStorage.setItem('pigUser', JSON.stringify(currentUser));
+    updateUserDisplay();
+  }
+}
+
+// ============ MEMBER TABS ============
+function buildMemberTabs() {
+  const tabs = [
+    { id: 'tasks', label: '任務申報' },
+    { id: 'rewards', label: '獎賞兌換' },
+    { id: 'treasury', label: '我的寶庫' },
+    { id: 'history', label: '歷程紀錄' }
+  ];
+  renderTabs(tabs);
+  switchTab('tasks');
+}
+
+// ============ ADMIN TABS ============
+function buildAdminTabs() {
+  const tabs = [
+    { id: 'pending', label: '待審核' },
+    { id: 'taskMgmt', label: '任務管理' },
+    { id: 'rewardMgmt', label: '獎賞管理' },
+    { id: 'coinMgmt', label: '金幣管理' },
+    { id: 'announce', label: '公告' },
+    { id: 'members', label: '會員' },
+    { id: 'adminHistory', label: '歷程' }
+  ];
+  renderTabs(tabs);
+  switchTab('pending');
+}
+
+function renderTabs(tabs) {
+  const nav = document.getElementById('tab-nav');
+  nav.innerHTML = tabs.map(t =>
+    `<button class="tab-btn" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.label}<span id="badge-${t.id}"></span></button>`
+  ).join('');
+}
+
+async function switchTab(tabId) {
+  currentTab = tabId;
+  // Update active state
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabId);
+  });
+
+  const container = document.getElementById('tab-contents');
+  const fab = document.getElementById('fab-container');
+  fab.style.display = 'none';
+
+  switch(tabId) {
+    case 'tasks': await renderTasksTab(container); break;
+    case 'rewards': await renderRewardsTab(container); break;
+    case 'treasury': await renderTreasuryTab(container); break;
+    case 'history': await renderHistoryTab(container); break;
+    case 'pending': await renderPendingTab(container); break;
+    case 'taskMgmt': await renderTaskMgmtTab(container); break;
+    case 'rewardMgmt': await renderRewardMgmtTab(container); break;
+    case 'coinMgmt': await renderCoinMgmtTab(container); break;
+    case 'announce': await renderAnnounceTab(container); break;
+    case 'members': await renderMembersTab(container); break;
+    case 'adminHistory': await renderAdminHistoryTab(container); break;
+  }
+
+  // Load announcements
+  loadAnnouncements();
+}
+
+// ============ ANNOUNCEMENTS ============
+async function loadAnnouncements() {
+  const res = await api('getAnnouncements');
+  const area = document.getElementById('announcements-area');
+  if (!res.success || !res.announcements || res.announcements.length === 0) {
+    area.innerHTML = '';
+    return;
+  }
+  area.innerHTML = res.announcements.map(a => `
+    <div class="announcement-banner">
+      <div class="announce-flag">📢 公告</div>
+      <div class="announce-title">${esc(a.title)}</div>
+      ${a.content ? `<div class="announce-content">${esc(a.content)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ============ MEMBER: TASKS TAB ============
+async function renderTasksTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入任務中...</div></div>';
+  selectedTasks.clear();
+
+  const res = await api('getTasks');
+  if (!res.success) { container.innerHTML = '<div class="empty-state">載入失敗</div>'; return; }
+  tasksData = res.tasks;
+
+  // Group by category
+  const groups = {};
+  tasksData.forEach(t => {
+    const cat = t.category || '其他';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(t);
+  });
+
+  let html = '';
+  for (const [cat, tasks] of Object.entries(groups)) {
+    html += `<div class="section-header"><div class="section-bar"></div><div class="section-title">${esc(cat)}</div></div>`;
+    tasks.forEach(t => {
+      html += `
+        <div class="task-card" data-id="${t.id}" onclick="toggleTask(this, '${t.id}')">
+          <div class="task-checkbox"></div>
+          <div class="task-name">${esc(t.name)}</div>
+          <div class="task-coins">${t.coins} 金幣</div>
+        </div>`;
+    });
+  }
+
+  // Custom task form
+  html += `
+    <div class="section-header mt-16"><div class="section-bar" style="background:var(--mint)"></div><div class="section-title">自主申報</div></div>
+    <div class="custom-form">
+      <div class="custom-form-title">有特別表現想申請獎勵嗎？</div>
+      <div class="form-row">
+        <input type="text" id="custom-task-name" class="form-input" placeholder="事由（例：被老師誇獎）">
+        <input type="number" id="custom-task-coins" class="form-input short" placeholder="金幣">
+      </div>
+      <input type="text" id="custom-task-note" class="form-input mb-16" placeholder="補充說明（選填）" style="margin-bottom:12px">
+      <button class="btn-submit-custom" onclick="submitCustomTask()">送出申請</button>
+    </div>`;
+
+  container.innerHTML = html;
+
+  // Show FAB
+  const fab = document.getElementById('fab-container');
+  const fabBtn = document.getElementById('fab-btn');
+  fabBtn.textContent = '送出申報';
+  fabBtn.onclick = submitSelectedTasks;
+  fab.style.display = 'block';
+}
+
+function toggleTask(el, id) {
+  el.classList.toggle('selected');
+  if (selectedTasks.has(id)) selectedTasks.delete(id);
+  else selectedTasks.add(id);
+}
+
+async function submitSelectedTasks() {
+  if (selectedTasks.size === 0) {
+    showToast('請先勾選完成的任務！', 'error');
+    return;
+  }
+  const fabBtn = document.getElementById('fab-btn');
+  fabBtn.disabled = true;
+  fabBtn.textContent = '送出中...';
+
+  const res = await api('submitTask', {
+    userId: currentUser.id,
+    taskIds: Array.from(selectedTasks)
+  });
+
+  if (res.success) {
+    showModal('🎉', '申報成功！', `已送出 ${res.submitted.length} 項任務，等媽媽審核哦！`);
+    selectedTasks.clear();
+    switchTab('tasks');
+  } else {
+    showToast(res.error || '送出失敗', 'error');
+  }
+
+  fabBtn.disabled = false;
+  fabBtn.textContent = '送出申報';
+}
+
+async function submitCustomTask() {
+  const name = document.getElementById('custom-task-name').value.trim();
+  const coins = document.getElementById('custom-task-coins').value.trim();
+  const note = document.getElementById('custom-task-note').value.trim();
+
+  if (!name || !coins) {
+    showToast('請填寫事由和金幣數', 'error');
+    return;
+  }
+
+  const res = await api('submitCustomTask', {
+    userId: currentUser.id,
+    taskName: name,
+    coins: Number(coins),
+    note
+  });
+
+  if (res.success) {
+    showModal('⭐', '申請已送出！', `「${name}」已提交，等媽媽審核哦！`);
+    document.getElementById('custom-task-name').value = '';
+    document.getElementById('custom-task-coins').value = '';
+    document.getElementById('custom-task-note').value = '';
+  } else {
+    showToast(res.error || '送出失敗', 'error');
+  }
+}
+
+// ============ MEMBER: REWARDS TAB ============
+async function renderRewardsTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入獎賞中...</div></div>';
+  await refreshUserInfo();
+
+  const res = await api('getRewards');
+  if (!res.success) { container.innerHTML = '<div class="empty-state">載入失敗</div>'; return; }
+  rewardsData = res.rewards;
+
+  if (rewardsData.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎁</div><div class="empty-text">還沒有獎賞可以兌換</div></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="section-header"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">獎賞兌換中心</div></div>
+    ${rewardsData.map(r => `
+      <div class="reward-card">
+        <div class="reward-info">
+          <div class="reward-name">${esc(r.name)}</div>
+          <div class="reward-cost">${r.coins} 金幣</div>
+        </div>
+        <button class="btn-claim" ${currentUser.coins < Number(r.coins) ? 'disabled' : ''} onclick="claimReward('${r.id}', '${esc(r.name)}', ${r.coins})">兌換</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+async function claimReward(rewardId, name, coins) {
+  if (!confirm(`確定要用 ${coins} 金幣兌換「${name}」嗎？`)) return;
+
+  const res = await api('claimReward', { userId: currentUser.id, rewardId });
+  if (res.success) {
+    showModal('🎁', '兌換申請已送出！', `「${name}」等媽媽確認後就可以使用啦！`);
+    await refreshUserInfo();
+    renderRewardsTab(document.getElementById('tab-contents'));
+  } else {
+    showToast(res.error || '兌換失敗', 'error');
+  }
+}
+
+// ============ MEMBER: TREASURY TAB ============
+async function renderTreasuryTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入寶庫中...</div></div>';
+
+  const res = await api('getMyClaims', { userId: currentUser.id });
+  if (!res.success || !res.claims || res.claims.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">👑</div><div class="empty-text">寶庫還是空的，快去賺金幣吧！</div></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="section-header"><div class="section-bar" style="background:var(--gold)"></div><div class="section-title">我的寶庫</div></div>
+    ${res.claims.map(c => `
+      <div class="reward-card">
+        <div class="reward-info">
+          <div class="reward-name">🏆 ${esc(c.rewardName)}</div>
+          <div class="reward-cost">${c.coins} 金幣 · ${formatTime(c.claimedAt)}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ============ MEMBER: HISTORY TAB ============
+async function renderHistoryTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入紀錄中...</div></div>';
+
+  const res = await api('getHistory', { userId: currentUser.id });
+  if (!res.success || !res.history || res.history.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">還沒有紀錄</div></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="section-header"><div class="section-bar" style="background:var(--peach-dark)"></div><div class="section-title">歷程紀錄</div></div>
+    ${res.history.map(h => `
+      <div class="history-item">
+        <div class="history-top">
+          <div class="history-name">${h.type === 'reward' ? '🎁 ' : ''}${esc(h.name)}</div>
+          <div class="history-status ${statusClass(h.status)}">${h.status}</div>
+        </div>
+        ${h.note ? `<div class="history-note">📝 ${esc(h.note)}</div>` : ''}
+        <div class="history-bottom">
+          <div class="history-time">${formatTime(h.time)}</div>
+          <div class="history-coins">${h.type === 'reward' ? '-' : '+'}${h.coins} 金幣</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ============ ADMIN: PENDING TAB ============
+async function renderPendingTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入待審核項目...</div></div>';
+
+  const [reportsRes, claimsRes] = await Promise.all([
+    api('getPendingReports', { userId: currentUser.id }),
+    api('getPendingClaims', { userId: currentUser.id })
+  ]);
+
+  const reports = reportsRes.success ? reportsRes.reports : [];
+  const claims = claimsRes.success ? claimsRes.claims : [];
+  const total = reports.length + claims.length;
+
+  // Update badge
+  const badge = document.getElementById('badge-pending');
+  if (badge) badge.innerHTML = total > 0 ? `<span class="pending-badge">${total}</span>` : '';
+
+  if (total === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">目前沒有待審核的項目</div></div>';
+    return;
+  }
+
+  let html = '';
+
+  if (reports.length > 0) {
+    html += '<div class="section-header"><div class="section-bar"></div><div class="section-title">待審核任務</div></div>';
+    reports.forEach(r => {
+      html += `
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">${AVATARS[r.avatar] || '🐷'}</div>
+            <div class="review-who">${esc(r.nickname)}</div>
+          </div>
+          <div class="review-body">
+            <div><div class="review-task">${esc(r.taskName)}</div>${r.note ? `<div class="review-note">📝 ${esc(r.note)}</div>` : ''}</div>
+            <div class="review-coins">${r.coins} 金幣</div>
+          </div>
+          <div class="review-time">${formatTime(r.submittedAt)}</div>
+          <div class="review-actions">
+            <button class="btn-approve" onclick="reviewReport('${r.id}', 'approve', this)">✓ 准奏</button>
+            <button class="btn-reject" onclick="reviewReport('${r.id}', 'reject', this)">✗ 駁回</button>
+          </div>
+        </div>`;
+    });
+  }
+
+  if (claims.length > 0) {
+    html += '<div class="section-header mt-16"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">待確認兌換</div></div>';
+    claims.forEach(c => {
+      html += `
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">${AVATARS[c.avatar] || '🐷'}</div>
+            <div class="review-who">${esc(c.nickname)}</div>
+          </div>
+          <div class="review-body">
+            <div class="review-task">🎁 ${esc(c.rewardName)}</div>
+            <div class="review-coins">${c.coins} 金幣</div>
+          </div>
+          <div class="review-time">${formatTime(c.claimedAt)}</div>
+          <div class="review-actions">
+            <button class="btn-approve" onclick="reviewClaim('${c.id}', 'approve', this)">✓ 確認兌換</button>
+            <button class="btn-reject" onclick="reviewClaim('${c.id}', 'reject', this)">✗ 駁回</button>
+          </div>
+        </div>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+async function reviewReport(reportId, decision, btn) {
+  btn.disabled = true;
+  const res = await api('reviewReport', { userId: currentUser.id, reportId, decision });
+  if (res.success) {
+    showToast(decision === 'approve' ? '已核准！金幣已發放 ✨' : '已駁回', 'success');
+    switchTab('pending');
+  } else {
+    showToast(res.error || '操作失敗', 'error');
+    btn.disabled = false;
+  }
+}
+
+async function reviewClaim(claimId, decision, btn) {
+  btn.disabled = true;
+  const res = await api('reviewClaim', { userId: currentUser.id, claimId, decision });
+  if (res.success) {
+    showToast(decision === 'approve' ? '已確認兌換！' : '已駁回', 'success');
+    switchTab('pending');
+  } else {
+    showToast(res.error || '操作失敗', 'error');
+    btn.disabled = false;
+  }
+}
+
+// ============ ADMIN: TASK MANAGEMENT ============
+async function renderTaskMgmtTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getTasks');
+  const allTasks = res.success ? res.tasks : [];
+
+  let html = `
+    <div class="section-header"><div class="section-bar" style="background:var(--mint)"></div><div class="section-title">新增任務</div></div>
+    <div class="add-form">
+      <div class="form-row">
+        <input type="text" id="new-task-name" class="form-input" placeholder="任務名稱">
+        <input type="number" id="new-task-coins" class="form-input short" placeholder="金幣">
+      </div>
+      <div class="form-row">
+        <input type="text" id="new-task-cat" class="form-input" placeholder="分類（如：生活類）">
+        <button class="btn-submit-custom" onclick="addTask()">新增</button>
+      </div>
+    </div>
+    <div class="section-header"><div class="section-bar"></div><div class="section-title">現有任務</div></div>`;
+
+  allTasks.forEach(t => {
+    html += `
+      <div class="mgmt-card">
+        <div class="mgmt-info">
+          <div class="mgmt-name">${esc(t.name)}</div>
+          <div class="mgmt-sub">${esc(t.category || '其他')} · ${t.coins} 金幣</div>
+        </div>
+        <div class="mgmt-actions">
+          <button class="btn-delete" onclick="deleteTask('${t.id}')">刪除</button>
+        </div>
+      </div>`;
+  });
+
+  if (allTasks.length === 0) html += '<div class="empty-state"><div class="empty-text">還沒有任務</div></div>';
+  container.innerHTML = html;
+}
+
+async function addTask() {
+  const name = document.getElementById('new-task-name').value.trim();
+  const coins = document.getElementById('new-task-coins').value.trim();
+  const category = document.getElementById('new-task-cat').value.trim() || '其他';
+
+  if (!name || !coins) { showToast('請填寫名稱和金幣', 'error'); return; }
+
+  const res = await api('addTask', { userId: currentUser.id, name, coins: Number(coins), category });
+  if (res.success) {
+    showToast('任務已新增！', 'success');
+    switchTab('taskMgmt');
+  } else {
+    showToast(res.error || '新增失敗', 'error');
+  }
+}
+
+async function deleteTask(taskId) {
+  if (!confirm('確定要刪除這個任務嗎？')) return;
+  const res = await api('deleteTask', { userId: currentUser.id, taskId });
+  if (res.success) {
+    showToast('已刪除', 'success');
+    switchTab('taskMgmt');
+  } else {
+    showToast(res.error || '刪除失敗', 'error');
+  }
+}
+
+// ============ ADMIN: REWARD MANAGEMENT ============
+async function renderRewardMgmtTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getRewards');
+  const allRewards = res.success ? res.rewards : [];
+
+  let html = `
+    <div class="section-header"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">新增獎賞</div></div>
+    <div class="add-form">
+      <div class="form-row">
+        <input type="text" id="new-reward-name" class="form-input" placeholder="獎賞名稱">
+        <input type="number" id="new-reward-coins" class="form-input short" placeholder="金幣">
+      </div>
+      <button class="btn-submit-custom" onclick="addReward()">新增</button>
+    </div>
+    <div class="section-header"><div class="section-bar"></div><div class="section-title">現有獎賞</div></div>`;
+
+  allRewards.forEach(r => {
+    html += `
+      <div class="mgmt-card">
+        <div class="mgmt-info">
+          <div class="mgmt-name">${esc(r.name)}</div>
+          <div class="mgmt-sub">${r.coins} 金幣</div>
+        </div>
+        <div class="mgmt-actions">
+          <button class="btn-delete" onclick="deleteReward('${r.id}')">刪除</button>
+        </div>
+      </div>`;
+  });
+
+  if (allRewards.length === 0) html += '<div class="empty-state"><div class="empty-text">還沒有獎賞</div></div>';
+  container.innerHTML = html;
+}
+
+async function addReward() {
+  const name = document.getElementById('new-reward-name').value.trim();
+  const coins = document.getElementById('new-reward-coins').value.trim();
+
+  if (!name || !coins) { showToast('請填寫名稱和金幣', 'error'); return; }
+
+  const res = await api('addReward', { userId: currentUser.id, name, coins: Number(coins) });
+  if (res.success) {
+    showToast('獎賞已新增！', 'success');
+    switchTab('rewardMgmt');
+  } else {
+    showToast(res.error || '新增失敗', 'error');
+  }
+}
+
+async function deleteReward(rewardId) {
+  if (!confirm('確定要刪除這個獎賞嗎？')) return;
+  const res = await api('deleteReward', { userId: currentUser.id, rewardId });
+  if (res.success) {
+    showToast('已刪除', 'success');
+    switchTab('rewardMgmt');
+  } else {
+    showToast(res.error || '刪除失敗', 'error');
+  }
+}
+
+// ============ ADMIN: COIN MANAGEMENT ============
+async function renderCoinMgmtTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getAllMembers', { userId: currentUser.id });
+  if (!res.success) { container.innerHTML = '<div class="empty-state">載入失敗</div>'; return; }
+
+  const members = res.members.filter(m => m.role === 'member');
+
+  let html = '<div class="section-header"><div class="section-bar" style="background:var(--gold)"></div><div class="section-title">金幣管理</div></div>';
+
+  members.forEach(m => {
+    html += `
+      <div class="coin-mgmt-card">
+        <div class="coin-mgmt-header">
+          <div class="coin-member-name">${AVATARS[m.avatar] || '🐷'} ${esc(m.nickname)}</div>
+          <div class="coin-current" id="coins-${m.id}">${m.coins} 金幣</div>
+        </div>
+        <div class="coin-actions">
+          <input type="number" id="coin-input-${m.id}" class="coin-input" placeholder="金額">
+          <button class="btn-coin btn-coin-set" onclick="adjustCoins('${m.id}', 'set')">設定</button>
+          <button class="btn-coin btn-coin-add" onclick="adjustCoins('${m.id}', 'add')">增加</button>
+          <button class="btn-coin btn-coin-sub" onclick="adjustCoins('${m.id}', 'subtract')">扣除</button>
+        </div>
+      </div>`;
+  });
+
+  if (members.length === 0) html += '<div class="empty-state"><div class="empty-text">還沒有成員</div></div>';
+  container.innerHTML = html;
+}
+
+async function adjustCoins(memberId, mode) {
+  const input = document.getElementById('coin-input-' + memberId);
+  const amount = input.value.trim();
+  if (!amount) { showToast('請輸入金額', 'error'); return; }
+
+  const res = await api('adjustCoins', { userId: currentUser.id, targetUserId: memberId, amount: Number(amount), mode });
+  if (res.success) {
+    document.getElementById('coins-' + memberId).textContent = res.newCoins + ' 金幣';
+    input.value = '';
+    showToast('金幣已更新！', 'success');
+  } else {
+    showToast(res.error || '操作失敗', 'error');
+  }
+}
+
+// ============ ADMIN: ANNOUNCEMENTS ============
+async function renderAnnounceTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getAnnouncements');
+  const announcements = res.success ? res.announcements : [];
+
+  let html = `
+    <div class="section-header"><div class="section-bar" style="background:var(--gold)"></div><div class="section-title">新增公告</div></div>
+    <div class="add-form">
+      <input type="text" id="new-announce-title" class="form-input mb-16" placeholder="公告標題" style="margin-bottom:10px">
+      <input type="text" id="new-announce-content" class="form-input mb-16" placeholder="公告內容（選填）" style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--gray-600);display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <input type="checkbox" id="new-announce-pinned"> 置頂
+      </label>
+      <button class="btn-submit-custom" onclick="addAnnouncement()">發佈</button>
+    </div>
+    <div class="section-header"><div class="section-bar"></div><div class="section-title">現有公告</div></div>`;
+
+  announcements.forEach(a => {
+    html += `
+      <div class="mgmt-card">
+        <div class="mgmt-info">
+          <div class="mgmt-name">${a.pinned === 'TRUE' || a.pinned === true ? '📌 ' : ''}${esc(a.title)}</div>
+          <div class="mgmt-sub">${esc(a.content || '')} · ${formatTime(a.createdAt)}</div>
+        </div>
+        <div class="mgmt-actions">
+          <button class="btn-delete" onclick="deleteAnnouncement('${a.id}')">刪除</button>
+        </div>
+      </div>`;
+  });
+
+  if (announcements.length === 0) html += '<div class="empty-state"><div class="empty-text">還沒有公告</div></div>';
+  container.innerHTML = html;
+}
+
+async function addAnnouncement() {
+  const title = document.getElementById('new-announce-title').value.trim();
+  const content = document.getElementById('new-announce-content').value.trim();
+  const pinned = document.getElementById('new-announce-pinned').checked;
+
+  if (!title) { showToast('請填寫公告標題', 'error'); return; }
+
+  const res = await api('addAnnouncement', { userId: currentUser.id, title, content, pinned });
+  if (res.success) {
+    showToast('公告已發佈！', 'success');
+    switchTab('announce');
+    loadAnnouncements();
+  } else {
+    showToast(res.error || '發佈失敗', 'error');
+  }
+}
+
+async function deleteAnnouncement(announcementId) {
+  if (!confirm('確定要刪除這則公告嗎？')) return;
+  const res = await api('deleteAnnouncement', { userId: currentUser.id, announcementId });
+  if (res.success) {
+    showToast('已刪除', 'success');
+    switchTab('announce');
+    loadAnnouncements();
+  } else {
+    showToast(res.error || '刪除失敗', 'error');
+  }
+}
+
+// ============ ADMIN: MEMBERS ============
+async function renderMembersTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getAllMembers', { userId: currentUser.id });
+  if (!res.success) { container.innerHTML = '<div class="empty-state">載入失敗</div>'; return; }
+
+  let html = `
+    <div class="section-header"><div class="section-bar" style="background:var(--pink)"></div><div class="section-title">新增成員</div></div>
+    <div class="add-form">
+      <div class="form-row">
+        <input type="text" id="new-member-username" class="form-input" placeholder="帳號">
+        <input type="text" id="new-member-password" class="form-input" placeholder="密碼">
+      </div>
+      <div class="form-row">
+        <input type="text" id="new-member-nickname" class="form-input" placeholder="暱稱">
+        <button class="btn-submit-custom" onclick="addMember()">新增</button>
+      </div>
+    </div>
+    <div class="section-header"><div class="section-bar"></div><div class="section-title">所有成員</div></div>`;
+
+  res.members.forEach(m => {
+    html += `
+      <div class="mgmt-card">
+        <div class="mgmt-info">
+          <div class="mgmt-name">${AVATARS[m.avatar] || '🐷'} ${esc(m.nickname)} <span class="badge ${m.role === 'admin' ? 'badge-admin' : 'badge-member'}">${m.role === 'admin' ? '管理者' : '成員'}</span></div>
+          <div class="mgmt-sub">帳號: ${esc(m.username)} · ${m.coins} 金幣</div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+async function addMember() {
+  const username = document.getElementById('new-member-username').value.trim();
+  const password = document.getElementById('new-member-password').value.trim();
+  const nickname = document.getElementById('new-member-nickname').value.trim();
+
+  if (!username || !password || !nickname) { showToast('請填寫完整資料', 'error'); return; }
+
+  const res = await api('addMember', { userId: currentUser.id, username, password, nickname });
+  if (res.success) {
+    showToast('成員已新增！', 'success');
+    switchTab('members');
+  } else {
+    showToast(res.error || '新增失敗', 'error');
+  }
+}
+
+// ============ ADMIN: ALL HISTORY ============
+async function renderAdminHistoryTab(container) {
+  container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div></div>';
+
+  const res = await api('getAllHistory', { userId: currentUser.id });
+  if (!res.success || !res.history || res.history.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">還沒有紀錄</div></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="section-header"><div class="section-bar" style="background:var(--peach-dark)"></div><div class="section-title">全部歷程紀錄</div></div>
+    ${res.history.map(h => `
+      <div class="history-item">
+        <div class="history-top">
+          <div>
+            <div class="history-name">${h.type === 'reward' ? '🎁 ' : ''}${esc(h.name)}</div>
+            <div class="history-who">${esc(h.nickname)}</div>
+          </div>
+          <div class="history-status ${statusClass(h.status)}">${h.status}</div>
+        </div>
+        ${h.note ? `<div class="history-note">📝 ${esc(h.note)}</div>` : ''}
+        <div class="history-bottom">
+          <div class="history-time">${formatTime(h.time)}</div>
+          <div class="history-coins">${h.type === 'reward' ? '-' : '+'}${h.coins} 金幣</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ============ UI HELPERS ============
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  try {
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return String(t);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  } catch(e) { return String(t); }
+}
+
+function statusClass(status) {
+  if (status === '准奏' || status === '已兌換') return 'status-approved';
+  if (status === '駁回') return 'status-rejected';
+  return 'status-pending';
+}
+
+function showModal(icon, title, msg) {
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent = msg;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast toast-' + type + ' show';
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function onFabClick() {
+  // Delegated via fab-btn onclick
+}
+
+// Handle Enter key on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-page').style.display !== 'none') {
+    doLogin();
+  }
+});
+</script>
+</body>
+</html>
