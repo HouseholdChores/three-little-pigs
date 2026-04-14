@@ -301,6 +301,47 @@ body {
 }
 
 /* ---- Reward Card ---- */
+
+/* ---- Collapsible Category ---- */
+.cat-group { margin-bottom: 6px; }
+.cat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  margin-bottom: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background .15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.cat-header:active { background: var(--gray-100); }
+.cat-arrow {
+  width: 20px; height: 20px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--gray-400);
+  transition: transform .25s;
+}
+.cat-group.open .cat-arrow { transform: rotate(90deg); }
+.cat-color {
+  width: 6px; height: 24px; border-radius: 3px; flex-shrink: 0;
+}
+.cat-label-text {
+  flex: 1; font-weight: 700; font-size: 15px; color: var(--brown-dark);
+}
+.cat-count {
+  font-size: 12px; color: var(--gray-400); font-weight: 500;
+}
+.cat-tasks {
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s ease;
+  padding-left: 0;
+}
+.cat-group.open .cat-tasks {
+  max-height: 2000px;
+}
+
 .reward-card {
   background: var(--white);
   border-radius: var(--radius-md);
@@ -872,6 +913,16 @@ async function loadAnnouncements() {
 }
 
 // ============ MEMBER: TASKS TAB ============
+const CAT_COLORS = {
+  '自理生活': '#1D9E75',
+  '家庭貢獻': '#378ADD',
+  '學習成長': '#7F77DD',
+  '自我管理': '#D85A30',
+  '人際溫暖': '#D4537E',
+  '探索與樂趣': '#639922',
+};
+const CAT_DEFAULT_COLOR = '#888780';
+
 async function renderTasksTab(container) {
   container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入任務中...</div></div>';
   selectedTasks.clear();
@@ -882,24 +933,39 @@ async function renderTasksTab(container) {
 
   // Group by category
   const groups = {};
+  const catOrder = [];
   tasksData.forEach(t => {
     const cat = t.category || '其他';
-    if (!groups[cat]) groups[cat] = [];
+    if (!groups[cat]) { groups[cat] = []; catOrder.push(cat); }
     groups[cat].push(t);
   });
 
   let html = '';
-  for (const [cat, tasks] of Object.entries(groups)) {
-    html += `<div class="section-header"><div class="section-bar"></div><div class="section-title">${esc(cat)}</div></div>`;
+  catOrder.forEach((cat, idx) => {
+    const tasks = groups[cat];
+    const color = CAT_COLORS[cat] || CAT_DEFAULT_COLOR;
+    html += `
+      <div class="cat-group open" id="cat-${idx}">
+        <div class="cat-header" onclick="toggleCat(${idx})">
+          <div class="cat-arrow">▶</div>
+          <div class="cat-color" style="background:${color}"></div>
+          <div class="cat-label-text">${esc(cat)}</div>
+          <div class="cat-count">${tasks.length} 項</div>
+        </div>
+        <div class="cat-tasks">`;
     tasks.forEach(t => {
       html += `
-        <div class="task-card" data-id="${t.id}" onclick="toggleTask(this, '${t.id}')">
-          <div class="task-checkbox"></div>
-          <div class="task-name">${esc(t.name)}</div>
-          <div class="task-coins">${t.coins} 金幣</div>
-        </div>`;
+          <div class="task-card" data-id="${t.id}" onclick="toggleTask(this, '${t.id}')">
+            <div class="task-checkbox"></div>
+            <div class="task-name">${esc(t.name)}</div>
+            <div class="task-coins">${t.coins} 金幣</div>
+          </div>`;
     });
-  }
+    html += `</div></div>`;
+  });
+
+  // Build category options for custom form dropdown
+  const catOptions = catOrder.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 
   // Custom task form
   html += `
@@ -909,6 +975,13 @@ async function renderTasksTab(container) {
       <div class="form-row">
         <input type="text" id="custom-task-name" class="form-input" placeholder="事由（例：被老師誇獎）">
         <input type="number" id="custom-task-coins" class="form-input short" placeholder="金幣">
+      </div>
+      <div class="form-row">
+        <select id="custom-task-cat" class="form-select" style="flex:1">
+          <option value="">選擇分類...</option>
+          ${catOptions}
+          <option value="其他">其他</option>
+        </select>
       </div>
       <input type="text" id="custom-task-note" class="form-input mb-16" placeholder="補充說明（選填）" style="margin-bottom:12px">
       <button class="btn-submit-custom" onclick="submitCustomTask()">送出申請</button>
@@ -922,6 +995,11 @@ async function renderTasksTab(container) {
   fabBtn.textContent = '送出申報';
   fabBtn.onclick = submitSelectedTasks;
   fab.style.display = 'block';
+}
+
+function toggleCat(idx) {
+  const group = document.getElementById('cat-' + idx);
+  if (group) group.classList.toggle('open');
 }
 
 function toggleTask(el, id) {
@@ -960,15 +1038,18 @@ async function submitCustomTask() {
   const name = document.getElementById('custom-task-name').value.trim();
   const coins = document.getElementById('custom-task-coins').value.trim();
   const note = document.getElementById('custom-task-note').value.trim();
+  const category = document.getElementById('custom-task-cat').value || '';
 
   if (!name || !coins) {
     showToast('請填寫事由和金幣數', 'error');
     return;
   }
 
+  const taskLabel = category ? `【${category}】${name}` : name;
+
   const res = await api('submitCustomTask', {
     userId: currentUser.id,
-    taskName: name,
+    taskName: taskLabel,
     coins: Number(coins),
     note
   });
@@ -978,6 +1059,7 @@ async function submitCustomTask() {
     document.getElementById('custom-task-name').value = '';
     document.getElementById('custom-task-coins').value = '';
     document.getElementById('custom-task-note').value = '';
+    document.getElementById('custom-task-cat').selectedIndex = 0;
   } else {
     showToast(res.error || '送出失敗', 'error');
   }
@@ -1177,6 +1259,12 @@ async function renderTaskMgmtTab(container) {
   const res = await api('getTasks');
   const allTasks = res.success ? res.tasks : [];
 
+  // Collect existing categories
+  const existingCats = [...new Set(allTasks.map(t => t.category || '其他'))];
+  const defaultCats = ['自理生活', '家庭貢獻', '學習成長', '自我管理', '人際溫暖', '探索與樂趣'];
+  const allCats = [...new Set([...defaultCats, ...existingCats])];
+  const catOptions = allCats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
   let html = `
     <div class="section-header"><div class="section-bar" style="background:var(--mint)"></div><div class="section-title">新增任務</div></div>
     <div class="add-form">
@@ -1185,23 +1273,38 @@ async function renderTaskMgmtTab(container) {
         <input type="number" id="new-task-coins" class="form-input short" placeholder="金幣">
       </div>
       <div class="form-row">
-        <input type="text" id="new-task-cat" class="form-input" placeholder="分類（如：生活類）">
+        <select id="new-task-cat" class="form-select" style="flex:1">
+          <option value="">選擇分類...</option>
+          ${catOptions}
+        </select>
         <button class="btn-submit-custom" onclick="addTask()">新增</button>
       </div>
-    </div>
-    <div class="section-header"><div class="section-bar"></div><div class="section-title">現有任務</div></div>`;
+    </div>`;
 
+  // Group tasks by category for display
+  const groups = {};
+  const catOrder = [];
   allTasks.forEach(t => {
-    html += `
-      <div class="mgmt-card">
-        <div class="mgmt-info">
-          <div class="mgmt-name">${esc(t.name)}</div>
-          <div class="mgmt-sub">${esc(t.category || '其他')} · ${t.coins} 金幣</div>
-        </div>
-        <div class="mgmt-actions">
-          <button class="btn-delete" onclick="deleteTask('${t.id}')">刪除</button>
-        </div>
-      </div>`;
+    const cat = t.category || '其他';
+    if (!groups[cat]) { groups[cat] = []; catOrder.push(cat); }
+    groups[cat].push(t);
+  });
+
+  catOrder.forEach(cat => {
+    const color = CAT_COLORS[cat] || CAT_DEFAULT_COLOR;
+    html += `<div class="section-header"><div class="section-bar" style="background:${color}"></div><div class="section-title">${esc(cat)}</div></div>`;
+    groups[cat].forEach(t => {
+      html += `
+        <div class="mgmt-card">
+          <div class="mgmt-info">
+            <div class="mgmt-name">${esc(t.name)}</div>
+            <div class="mgmt-sub">${t.coins} 金幣</div>
+          </div>
+          <div class="mgmt-actions">
+            <button class="btn-delete" onclick="deleteTask('${t.id}')">刪除</button>
+          </div>
+        </div>`;
+    });
   });
 
   if (allTasks.length === 0) html += '<div class="empty-state"><div class="empty-text">還沒有任務</div></div>';
@@ -1211,9 +1314,11 @@ async function renderTaskMgmtTab(container) {
 async function addTask() {
   const name = document.getElementById('new-task-name').value.trim();
   const coins = document.getElementById('new-task-coins').value.trim();
-  const category = document.getElementById('new-task-cat').value.trim() || '其他';
+  const catSelect = document.getElementById('new-task-cat');
+  const category = catSelect.value || '其他';
 
   if (!name || !coins) { showToast('請填寫名稱和金幣', 'error'); return; }
+  if (!catSelect.value) { showToast('請選擇分類', 'error'); return; }
 
   const res = await api('addTask', { userId: currentUser.id, name, coins: Number(coins), category });
   if (res.success) {
