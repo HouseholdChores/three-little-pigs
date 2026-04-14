@@ -665,13 +665,23 @@ const AVATARS = ['🐷','🐷','🐽','🐖','🐗','🐶','🐱'];
 
 // ============ API HELPER ============
 async function api(action, data = {}) {
-  const payload = { action, ...data };
+  // Google Apps Script Web App redirects POST requests (302),
+  // which causes browsers to lose the POST body on cross-origin.
+  // Solution: encode everything into URL search params via GET.
+  const params = new URLSearchParams();
+  params.set('action', action);
+  for (const [key, val] of Object.entries(data)) {
+    if (val === undefined || val === null) continue;
+    // Arrays need JSON encoding
+    if (Array.isArray(val)) {
+      params.set(key, JSON.stringify(val));
+    } else {
+      params.set(key, String(val));
+    }
+  }
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
+    const url = API_URL + '?' + params.toString();
+    const res = await fetch(url, { redirect: 'follow' });
     return await res.json();
   } catch(err) {
     console.error('API Error:', err);
