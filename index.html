@@ -1014,11 +1014,15 @@ function toggleTask(el, id) {
   else selectedTasks.add(id);
 }
 
+let submitting = false;
+
 async function submitSelectedTasks() {
+  if (submitting) return;
   if (selectedTasks.size === 0) {
     showToast('請先勾選完成的任務！', 'error');
     return;
   }
+  submitting = true;
   const fabBtn = document.getElementById('fab-btn');
   fabBtn.disabled = true;
   fabBtn.textContent = '送出中...';
@@ -1038,9 +1042,11 @@ async function submitSelectedTasks() {
 
   fabBtn.disabled = false;
   fabBtn.textContent = '送出申報';
+  submitting = false;
 }
 
 async function submitCustomTask() {
+  if (submitting) return;
   const name = document.getElementById('custom-task-name').value.trim();
   const coins = document.getElementById('custom-task-coins').value.trim();
   const note = document.getElementById('custom-task-note').value.trim();
@@ -1051,6 +1057,7 @@ async function submitCustomTask() {
     return;
   }
 
+  submitting = true;
   const taskLabel = category ? `【${category}】${name}` : name;
 
   const res = await api('submitCustomTask', {
@@ -1069,6 +1076,7 @@ async function submitCustomTask() {
   } else {
     showToast(res.error || '送出失敗', 'error');
   }
+  submitting = false;
 }
 
 // ============ MEMBER: REWARDS TAB ============
@@ -1100,9 +1108,12 @@ async function renderRewardsTab(container) {
 }
 
 async function claimReward(rewardId, name, coins) {
+  if (submitting) return;
   if (!confirm(`確定要用 ${coins} 金幣兌換「${name}」嗎？`)) return;
 
+  submitting = true;
   const res = await api('claimReward', { userId: currentUser.id, rewardId });
+  submitting = false;
   if (res.success) {
     showModal('🎁', '兌換申請已送出！', `「${name}」等媽媽確認後就可以使用啦！`);
     await refreshUserInfo();
@@ -1193,63 +1204,58 @@ async function renderPendingTab(container) {
 
   let html = '';
 
-  // ---- 任務完成確認 (built-in tasks without note) ----
+  // ---- 任務完成確認 ----
   const builtInReports = pendingReports.filter(r => !r.note);
   const customReports = pendingReports.filter(r => r.note);
 
   if (builtInReports.length > 0) {
     html += `
       <div class="section-header"><div class="section-bar" style="background:var(--mint)"></div><div class="section-title">任務完成確認</div></div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="btn-submit-custom" onclick="selectAllReports('builtin')" style="font-size:12px;padding:6px 14px">全選</button>
-        <button class="btn-approve" onclick="batchReviewReports('builtin','approve')" style="flex:1;font-size:13px">✓ 全部「很棒」</button>
-        <button class="btn-reject" onclick="batchReviewReports('builtin','reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--gray-600);user-select:none;min-width:60px">
+          <input type="checkbox" onchange="toggleSelectAll('builtin', this.checked)" style="width:18px;height:18px;cursor:pointer"> 全選
+        </label>
+        <button class="btn-approve" onclick="batchReviewReports('builtin','approve')" style="flex:1;min-width:80px">很棒</button>
+        <button class="btn-reject" onclick="batchReviewReports('builtin','reject')" style="flex:1;min-width:80px">再想想</button>
       </div>`;
-    builtInReports.forEach(r => {
-      html += reviewCardHTML(r, 'report', 'builtin');
-    });
+    builtInReports.forEach(r => { html += pendingCardHTML(r, 'report', 'builtin'); });
   }
 
-  // ---- 自主申報審核 (custom tasks with note) ----
   if (customReports.length > 0) {
     html += `
       <div class="section-header mt-16"><div class="section-bar" style="background:var(--peach-dark)"></div><div class="section-title">自主申報審核</div></div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="btn-submit-custom" onclick="selectAllReports('custom')" style="font-size:12px;padding:6px 14px">全選</button>
-        <button class="btn-approve" onclick="batchReviewReports('custom','approve')" style="flex:1;font-size:13px">✓ 全部「ok喔」</button>
-        <button class="btn-reject" onclick="batchReviewReports('custom','reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--gray-600);user-select:none;min-width:60px">
+          <input type="checkbox" onchange="toggleSelectAll('custom', this.checked)" style="width:18px;height:18px;cursor:pointer"> 全選
+        </label>
+        <button class="btn-approve" onclick="batchReviewReports('custom','approve')" style="flex:1;min-width:80px">ok喔</button>
+        <button class="btn-reject" onclick="batchReviewReports('custom','reject')" style="flex:1;min-width:80px">再想想</button>
       </div>`;
-    customReports.forEach(r => {
-      html += reviewCardHTML(r, 'report', 'custom');
-    });
+    customReports.forEach(r => { html += pendingCardHTML(r, 'report', 'custom'); });
   }
 
-  // ---- 獎賞兌換確認 ----
   if (pendingClaims.length > 0) {
     html += `
       <div class="section-header mt-16"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">獎賞兌換確認</div></div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="btn-submit-custom" onclick="selectAllClaims()" style="font-size:12px;padding:6px 14px">全選</button>
-        <button class="btn-approve" onclick="batchReviewClaims('approve')" style="flex:1;font-size:13px">✓ 全部確認兌換</button>
-        <button class="btn-reject" onclick="batchReviewClaims('reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--gray-600);user-select:none;min-width:60px">
+          <input type="checkbox" onchange="toggleSelectAllClaims(this.checked)" style="width:18px;height:18px;cursor:pointer"> 全選
+        </label>
+        <button class="btn-approve" onclick="batchReviewClaims('approve')" style="flex:1;min-width:80px">ok喔</button>
+        <button class="btn-reject" onclick="batchReviewClaims('reject')" style="flex:1;min-width:80px">再想想</button>
       </div>`;
-    pendingClaims.forEach(c => {
-      html += reviewCardHTML(c, 'claim', '');
-    });
+    pendingClaims.forEach(c => { html += pendingCardHTML(c, 'claim', ''); });
   }
 
   container.innerHTML = html;
 }
 
-function reviewCardHTML(item, type, subtype) {
+function pendingCardHTML(item, type, subtype) {
   const id = item.id;
   const isReport = type === 'report';
-  const setName = isReport ? 'selectedReports' : 'selectedClaims';
-  const toggleFn = isReport ? 'toggleReportSelect' : 'toggleClaimSelect';
-
   return `
-    <div class="review-card" id="rc-${id}" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="${toggleFn}('${id}', this)" data-subtype="${subtype}">
-      <div class="task-checkbox" id="cb-${id}" style="margin-top:2px;flex-shrink:0"></div>
+    <div class="review-card" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="togglePendingItem('${id}','${type}','${subtype}')">
+      <input type="checkbox" id="cb-${id}" style="width:20px;height:20px;margin-top:4px;flex-shrink:0;cursor:pointer;accent-color:var(--pink)" onclick="event.stopPropagation();togglePendingItem('${id}','${type}','${subtype}')">
       <div style="flex:1">
         <div class="review-header" style="margin-bottom:4px">
           <div class="review-avatar">${AVATARS[item.avatar] || '🐷'}</div>
@@ -1264,104 +1270,70 @@ function reviewCardHTML(item, type, subtype) {
     </div>`;
 }
 
-function toggleReportSelect(id, el) {
-  if (selectedReports.has(id)) { selectedReports.delete(id); el.classList.remove('selected'); }
-  else { selectedReports.add(id); el.classList.add('selected'); }
+function togglePendingItem(id, type, subtype) {
   const cb = document.getElementById('cb-' + id);
-  if (cb) { cb.innerHTML = selectedReports.has(id) ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = selectedReports.has(id) ? 'var(--pink)' : ''; cb.style.borderColor = selectedReports.has(id) ? 'var(--pink)' : ''; }
+  if (!cb) return;
+  const set = type === 'report' ? selectedReports : selectedClaims;
+  if (set.has(id)) { set.delete(id); cb.checked = false; }
+  else { set.add(id); cb.checked = true; }
 }
 
-function toggleClaimSelect(id, el) {
-  if (selectedClaims.has(id)) { selectedClaims.delete(id); el.classList.remove('selected'); }
-  else { selectedClaims.add(id); el.classList.add('selected'); }
-  const cb = document.getElementById('cb-' + id);
-  if (cb) { cb.innerHTML = selectedClaims.has(id) ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = selectedClaims.has(id) ? 'var(--pink)' : ''; cb.style.borderColor = selectedClaims.has(id) ? 'var(--pink)' : ''; }
-}
-
-function selectAllReports(subtype) {
-  const cards = document.querySelectorAll(`.review-card[data-subtype="${subtype}"]`);
-  const reports = subtype === 'builtin' ? pendingReports.filter(r => !r.note) : pendingReports.filter(r => r.note);
-  const allSelected = reports.every(r => selectedReports.has(r.id));
-  reports.forEach(r => {
-    if (allSelected) { selectedReports.delete(r.id); } else { selectedReports.add(r.id); }
-  });
-  cards.forEach(el => {
-    const id = el.id.replace('rc-', '');
-    const isSelected = selectedReports.has(id);
-    el.classList.toggle('selected', isSelected);
-    const cb = document.getElementById('cb-' + id);
-    if (cb) { cb.innerHTML = isSelected ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = isSelected ? 'var(--pink)' : ''; cb.style.borderColor = isSelected ? 'var(--pink)' : ''; }
+function toggleSelectAll(subtype, checked) {
+  const items = subtype === 'builtin' ? pendingReports.filter(r => !r.note) : pendingReports.filter(r => r.note);
+  items.forEach(r => {
+    if (checked) selectedReports.add(r.id); else selectedReports.delete(r.id);
+    const cb = document.getElementById('cb-' + r.id);
+    if (cb) cb.checked = checked;
   });
 }
 
-function selectAllClaims() {
-  const allSelected = pendingClaims.every(c => selectedClaims.has(c.id));
+function toggleSelectAllClaims(checked) {
   pendingClaims.forEach(c => {
-    if (allSelected) { selectedClaims.delete(c.id); } else { selectedClaims.add(c.id); }
-    const el = document.getElementById('rc-' + c.id);
+    if (checked) selectedClaims.add(c.id); else selectedClaims.delete(c.id);
     const cb = document.getElementById('cb-' + c.id);
-    const isSelected = selectedClaims.has(c.id);
-    if (el) el.classList.toggle('selected', isSelected);
-    if (cb) { cb.innerHTML = isSelected ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = isSelected ? 'var(--pink)' : ''; cb.style.borderColor = isSelected ? 'var(--pink)' : ''; }
+    if (cb) cb.checked = checked;
   });
 }
+
+let batchProcessing = false;
 
 async function batchReviewReports(subtype, decision) {
+  if (batchProcessing) return;
   const ids = Array.from(selectedReports);
   const filtered = subtype === 'builtin'
     ? ids.filter(id => pendingReports.find(r => r.id === id && !r.note))
     : ids.filter(id => pendingReports.find(r => r.id === id && r.note));
   if (filtered.length === 0) { showToast('請先勾選要處理的項目', 'error'); return; }
-  const label = decision === 'approve' ? (subtype === 'builtin' ? '很棒' : 'ok喔') : '駁回';
+  const label = decision === 'approve' ? (subtype === 'builtin' ? '很棒' : 'ok喔') : '再想想';
   if (!confirm(`確定要將 ${filtered.length} 項標記為「${label}」嗎？`)) return;
 
+  batchProcessing = true;
   let ok = 0;
   for (const reportId of filtered) {
     const res = await api('reviewReport', { userId: currentUser.id, reportId, decision });
     if (res.success) ok++;
   }
+  batchProcessing = false;
   showToast(`已處理 ${ok} 項！`, 'success');
   switchTab('pending');
 }
 
 async function batchReviewClaims(decision) {
+  if (batchProcessing) return;
   const ids = Array.from(selectedClaims);
   if (ids.length === 0) { showToast('請先勾選要處理的項目', 'error'); return; }
-  const label = decision === 'approve' ? '確認兌換' : '駁回';
+  const label = decision === 'approve' ? 'ok喔' : '再想想';
   if (!confirm(`確定要將 ${ids.length} 項「${label}」嗎？`)) return;
 
+  batchProcessing = true;
   let ok = 0;
   for (const claimId of ids) {
     const res = await api('reviewClaim', { userId: currentUser.id, claimId, decision });
     if (res.success) ok++;
   }
+  batchProcessing = false;
   showToast(`已處理 ${ok} 項！`, 'success');
   switchTab('pending');
-}
-
-// Keep single review as fallback (no longer used by cards but kept for safety)
-async function reviewReport(reportId, decision, btn) {
-  btn.disabled = true;
-  const res = await api('reviewReport', { userId: currentUser.id, reportId, decision });
-  if (res.success) {
-    showToast(decision === 'approve' ? '很棒！金幣已發放 ✨' : '已駁回', 'success');
-    switchTab('pending');
-  } else {
-    showToast(res.error || '操作失敗', 'error');
-    btn.disabled = false;
-  }
-}
-
-async function reviewClaim(claimId, decision, btn) {
-  btn.disabled = true;
-  const res = await api('reviewClaim', { userId: currentUser.id, claimId, decision });
-  if (res.success) {
-    showToast(decision === 'approve' ? '已確認兌換！' : '已駁回', 'success');
-    switchTab('pending');
-  } else {
-    showToast(res.error || '操作失敗', 'error');
-    btn.disabled = false;
-  }
 }
 
 // ============ ADMIN: TASK MANAGEMENT ============
@@ -1731,7 +1703,7 @@ function statusClass(status) {
 function statusLabel(status, hasNote, type) {
   if (status === '准奏') return hasNote ? 'ok喔' : '很棒';
   if (status === '已兌換') return '已兌換';
-  if (status === '駁回') return '駁回';
+  if (status === '駁回') return '再想想';
   if (status === '待審核') return '待審核';
   if (status === '待確認') return '待確認';
   return status;
