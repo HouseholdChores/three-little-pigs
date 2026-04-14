@@ -1,0 +1,24 @@
+{
+  "name": "三隻小豬任務城堡",
+  "short_name": "三隻小豬",
+  "description": "家庭任務獎勵系統",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF5EB",
+  "theme_color": "#FFF5EB",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
