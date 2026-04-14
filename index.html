@@ -442,6 +442,12 @@ body {
   padding: 16px;
   margin-bottom: 12px;
   box-shadow: var(--shadow-sm);
+  border: 1.5px solid transparent;
+  transition: border-color .2s;
+}
+.review-card.selected {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(244,160,181,0.15);
 }
 .review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .review-avatar {
@@ -1145,7 +1151,7 @@ async function renderHistoryTab(container) {
       <div class="history-item">
         <div class="history-top">
           <div class="history-name">${h.type === 'reward' ? '🎁 ' : ''}${esc(h.name)}</div>
-          <div class="history-status ${statusClass(h.status)}">${h.status}</div>
+          <div class="history-status ${statusClass(h.status)}">${statusLabel(h.status, h.note, h.type)}</div>
         </div>
         ${h.note ? `<div class="history-note">📝 ${esc(h.note)}</div>` : ''}
         <div class="history-bottom">
@@ -1158,6 +1164,11 @@ async function renderHistoryTab(container) {
 }
 
 // ============ ADMIN: PENDING TAB ============
+let pendingReports = [];
+let pendingClaims = [];
+let selectedReports = new Set();
+let selectedClaims = new Set();
+
 async function renderPendingTab(container) {
   container.innerHTML = '<div class="empty-state"><div class="loading-pig" style="font-size:32px">🐷</div><div class="empty-text">載入待審核項目...</div></div>';
 
@@ -1166,11 +1177,12 @@ async function renderPendingTab(container) {
     api('getPendingClaims', { userId: currentUser.id })
   ]);
 
-  const reports = reportsRes.success ? reportsRes.reports : [];
-  const claims = claimsRes.success ? claimsRes.claims : [];
-  const total = reports.length + claims.length;
+  pendingReports = reportsRes.success ? reportsRes.reports : [];
+  pendingClaims = claimsRes.success ? claimsRes.claims : [];
+  selectedReports.clear();
+  selectedClaims.clear();
+  const total = pendingReports.length + pendingClaims.length;
 
-  // Update badge
   const badge = document.getElementById('badge-pending');
   if (badge) badge.innerHTML = total > 0 ? `<span class="pending-badge">${total}</span>` : '';
 
@@ -1181,58 +1193,158 @@ async function renderPendingTab(container) {
 
   let html = '';
 
-  if (reports.length > 0) {
-    html += '<div class="section-header"><div class="section-bar"></div><div class="section-title">待審核任務</div></div>';
-    reports.forEach(r => {
-      html += `
-        <div class="review-card">
-          <div class="review-header">
-            <div class="review-avatar">${AVATARS[r.avatar] || '🐷'}</div>
-            <div class="review-who">${esc(r.nickname)}</div>
-          </div>
-          <div class="review-body">
-            <div><div class="review-task">${esc(r.taskName)}</div>${r.note ? `<div class="review-note">📝 ${esc(r.note)}</div>` : ''}</div>
-            <div class="review-coins">${r.coins} 金幣</div>
-          </div>
-          <div class="review-time">${formatTime(r.submittedAt)}</div>
-          <div class="review-actions">
-            <button class="btn-approve" onclick="reviewReport('${r.id}', 'approve', this)">✓ 准奏</button>
-            <button class="btn-reject" onclick="reviewReport('${r.id}', 'reject', this)">✗ 駁回</button>
-          </div>
-        </div>`;
+  // ---- 任務完成確認 (built-in tasks without note) ----
+  const builtInReports = pendingReports.filter(r => !r.note);
+  const customReports = pendingReports.filter(r => r.note);
+
+  if (builtInReports.length > 0) {
+    html += `
+      <div class="section-header"><div class="section-bar" style="background:var(--mint)"></div><div class="section-title">任務完成確認</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn-submit-custom" onclick="selectAllReports('builtin')" style="font-size:12px;padding:6px 14px">全選</button>
+        <button class="btn-approve" onclick="batchReviewReports('builtin','approve')" style="flex:1;font-size:13px">✓ 全部「很棒」</button>
+        <button class="btn-reject" onclick="batchReviewReports('builtin','reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      </div>`;
+    builtInReports.forEach(r => {
+      html += reviewCardHTML(r, 'report', 'builtin');
     });
   }
 
-  if (claims.length > 0) {
-    html += '<div class="section-header mt-16"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">待確認兌換</div></div>';
-    claims.forEach(c => {
-      html += `
-        <div class="review-card">
-          <div class="review-header">
-            <div class="review-avatar">${AVATARS[c.avatar] || '🐷'}</div>
-            <div class="review-who">${esc(c.nickname)}</div>
-          </div>
-          <div class="review-body">
-            <div class="review-task">🎁 ${esc(c.rewardName)}</div>
-            <div class="review-coins">${c.coins} 金幣</div>
-          </div>
-          <div class="review-time">${formatTime(c.claimedAt)}</div>
-          <div class="review-actions">
-            <button class="btn-approve" onclick="reviewClaim('${c.id}', 'approve', this)">✓ 確認兌換</button>
-            <button class="btn-reject" onclick="reviewClaim('${c.id}', 'reject', this)">✗ 駁回</button>
-          </div>
-        </div>`;
+  // ---- 自主申報審核 (custom tasks with note) ----
+  if (customReports.length > 0) {
+    html += `
+      <div class="section-header mt-16"><div class="section-bar" style="background:var(--peach-dark)"></div><div class="section-title">自主申報審核</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn-submit-custom" onclick="selectAllReports('custom')" style="font-size:12px;padding:6px 14px">全選</button>
+        <button class="btn-approve" onclick="batchReviewReports('custom','approve')" style="flex:1;font-size:13px">✓ 全部「ok喔」</button>
+        <button class="btn-reject" onclick="batchReviewReports('custom','reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      </div>`;
+    customReports.forEach(r => {
+      html += reviewCardHTML(r, 'report', 'custom');
+    });
+  }
+
+  // ---- 獎賞兌換確認 ----
+  if (pendingClaims.length > 0) {
+    html += `
+      <div class="section-header mt-16"><div class="section-bar" style="background:var(--sky)"></div><div class="section-title">獎賞兌換確認</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn-submit-custom" onclick="selectAllClaims()" style="font-size:12px;padding:6px 14px">全選</button>
+        <button class="btn-approve" onclick="batchReviewClaims('approve')" style="flex:1;font-size:13px">✓ 全部確認兌換</button>
+        <button class="btn-reject" onclick="batchReviewClaims('reject')" style="flex:0;font-size:13px;padding:10px 16px">✗ 駁回勾選</button>
+      </div>`;
+    pendingClaims.forEach(c => {
+      html += reviewCardHTML(c, 'claim', '');
     });
   }
 
   container.innerHTML = html;
 }
 
+function reviewCardHTML(item, type, subtype) {
+  const id = item.id;
+  const isReport = type === 'report';
+  const setName = isReport ? 'selectedReports' : 'selectedClaims';
+  const toggleFn = isReport ? 'toggleReportSelect' : 'toggleClaimSelect';
+
+  return `
+    <div class="review-card" id="rc-${id}" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="${toggleFn}('${id}', this)" data-subtype="${subtype}">
+      <div class="task-checkbox" id="cb-${id}" style="margin-top:2px;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div class="review-header" style="margin-bottom:4px">
+          <div class="review-avatar">${AVATARS[item.avatar] || '🐷'}</div>
+          <div class="review-who">${esc(item.nickname)}</div>
+        </div>
+        <div class="review-body">
+          <div><div class="review-task">${isReport ? '' : '🎁 '}${esc(isReport ? item.taskName : item.rewardName)}</div>${item.note ? `<div class="review-note">📝 ${esc(item.note)}</div>` : ''}</div>
+          <div class="review-coins">${item.coins} 金幣</div>
+        </div>
+        <div class="review-time">${formatTime(isReport ? item.submittedAt : item.claimedAt)}</div>
+      </div>
+    </div>`;
+}
+
+function toggleReportSelect(id, el) {
+  if (selectedReports.has(id)) { selectedReports.delete(id); el.classList.remove('selected'); }
+  else { selectedReports.add(id); el.classList.add('selected'); }
+  const cb = document.getElementById('cb-' + id);
+  if (cb) { cb.innerHTML = selectedReports.has(id) ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = selectedReports.has(id) ? 'var(--pink)' : ''; cb.style.borderColor = selectedReports.has(id) ? 'var(--pink)' : ''; }
+}
+
+function toggleClaimSelect(id, el) {
+  if (selectedClaims.has(id)) { selectedClaims.delete(id); el.classList.remove('selected'); }
+  else { selectedClaims.add(id); el.classList.add('selected'); }
+  const cb = document.getElementById('cb-' + id);
+  if (cb) { cb.innerHTML = selectedClaims.has(id) ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = selectedClaims.has(id) ? 'var(--pink)' : ''; cb.style.borderColor = selectedClaims.has(id) ? 'var(--pink)' : ''; }
+}
+
+function selectAllReports(subtype) {
+  const cards = document.querySelectorAll(`.review-card[data-subtype="${subtype}"]`);
+  const reports = subtype === 'builtin' ? pendingReports.filter(r => !r.note) : pendingReports.filter(r => r.note);
+  const allSelected = reports.every(r => selectedReports.has(r.id));
+  reports.forEach(r => {
+    if (allSelected) { selectedReports.delete(r.id); } else { selectedReports.add(r.id); }
+  });
+  cards.forEach(el => {
+    const id = el.id.replace('rc-', '');
+    const isSelected = selectedReports.has(id);
+    el.classList.toggle('selected', isSelected);
+    const cb = document.getElementById('cb-' + id);
+    if (cb) { cb.innerHTML = isSelected ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = isSelected ? 'var(--pink)' : ''; cb.style.borderColor = isSelected ? 'var(--pink)' : ''; }
+  });
+}
+
+function selectAllClaims() {
+  const allSelected = pendingClaims.every(c => selectedClaims.has(c.id));
+  pendingClaims.forEach(c => {
+    if (allSelected) { selectedClaims.delete(c.id); } else { selectedClaims.add(c.id); }
+    const el = document.getElementById('rc-' + c.id);
+    const cb = document.getElementById('cb-' + c.id);
+    const isSelected = selectedClaims.has(c.id);
+    if (el) el.classList.toggle('selected', isSelected);
+    if (cb) { cb.innerHTML = isSelected ? '<span style="color:white;font-size:14px;font-weight:700">✓</span>' : ''; cb.style.background = isSelected ? 'var(--pink)' : ''; cb.style.borderColor = isSelected ? 'var(--pink)' : ''; }
+  });
+}
+
+async function batchReviewReports(subtype, decision) {
+  const ids = Array.from(selectedReports);
+  const filtered = subtype === 'builtin'
+    ? ids.filter(id => pendingReports.find(r => r.id === id && !r.note))
+    : ids.filter(id => pendingReports.find(r => r.id === id && r.note));
+  if (filtered.length === 0) { showToast('請先勾選要處理的項目', 'error'); return; }
+  const label = decision === 'approve' ? (subtype === 'builtin' ? '很棒' : 'ok喔') : '駁回';
+  if (!confirm(`確定要將 ${filtered.length} 項標記為「${label}」嗎？`)) return;
+
+  let ok = 0;
+  for (const reportId of filtered) {
+    const res = await api('reviewReport', { userId: currentUser.id, reportId, decision });
+    if (res.success) ok++;
+  }
+  showToast(`已處理 ${ok} 項！`, 'success');
+  switchTab('pending');
+}
+
+async function batchReviewClaims(decision) {
+  const ids = Array.from(selectedClaims);
+  if (ids.length === 0) { showToast('請先勾選要處理的項目', 'error'); return; }
+  const label = decision === 'approve' ? '確認兌換' : '駁回';
+  if (!confirm(`確定要將 ${ids.length} 項「${label}」嗎？`)) return;
+
+  let ok = 0;
+  for (const claimId of ids) {
+    const res = await api('reviewClaim', { userId: currentUser.id, claimId, decision });
+    if (res.success) ok++;
+  }
+  showToast(`已處理 ${ok} 項！`, 'success');
+  switchTab('pending');
+}
+
+// Keep single review as fallback (no longer used by cards but kept for safety)
 async function reviewReport(reportId, decision, btn) {
   btn.disabled = true;
   const res = await api('reviewReport', { userId: currentUser.id, reportId, decision });
   if (res.success) {
-    showToast(decision === 'approve' ? '已核准！金幣已發放 ✨' : '已駁回', 'success');
+    showToast(decision === 'approve' ? '很棒！金幣已發放 ✨' : '已駁回', 'success');
     switchTab('pending');
   } else {
     showToast(res.error || '操作失敗', 'error');
@@ -1581,7 +1693,7 @@ async function renderAdminHistoryTab(container) {
             <div class="history-name">${h.type === 'reward' ? '🎁 ' : ''}${esc(h.name)}</div>
             <div class="history-who">${esc(h.nickname)}</div>
           </div>
-          <div class="history-status ${statusClass(h.status)}">${h.status}</div>
+          <div class="history-status ${statusClass(h.status)}">${statusLabel(h.status, h.note, h.type)}</div>
         </div>
         ${h.note ? `<div class="history-note">📝 ${esc(h.note)}</div>` : ''}
         <div class="history-bottom">
@@ -1611,9 +1723,18 @@ function formatTime(t) {
 }
 
 function statusClass(status) {
-  if (status === '准奏' || status === '已兌換') return 'status-approved';
+  if (status === '准奏' || status === '已兌換' || status === '很棒' || status === 'ok喔') return 'status-approved';
   if (status === '駁回') return 'status-rejected';
   return 'status-pending';
+}
+
+function statusLabel(status, hasNote, type) {
+  if (status === '准奏') return hasNote ? 'ok喔' : '很棒';
+  if (status === '已兌換') return '已兌換';
+  if (status === '駁回') return '駁回';
+  if (status === '待審核') return '待審核';
+  if (status === '待確認') return '待確認';
+  return status;
 }
 
 function showModal(icon, title, msg) {
